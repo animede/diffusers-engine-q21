@@ -1,6 +1,6 @@
-.venv/
-models/
-outputs/
+.venv
+models
+outputs
 benchmarks/archive/
 __pycache__/
 *.py[cod]

@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for contributing to Local Image Studio.
+Thank you for contributing to Diffusers Engine Q21.
 
 ## Development rules
 

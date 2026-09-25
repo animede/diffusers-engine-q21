@@ -1,13 +1,13 @@
-Local Image Studio
-Copyright 2026 Local Image Studio contributors
+Diffusers Engine Q21
+Copyright 2026 Diffusers Engine Q21 contributors
 
 This product includes original integration code for local inference,
 quantization, low-VRAM execution, acceleration profiles, and benchmarking.
 
 The Apache License 2.0 applies only to the source code and documentation in
 this repository unless a file or third-party notice states otherwise. It does
-not grant rights to Qwen model weights, Viggle adapter weights, trademarks, or
-other third-party materials.
+not grant rights to Qwen model weights, Viggle or Orbit adapter weights,
+trademarks, or other third-party materials.
 
 Built with Qwen.
 

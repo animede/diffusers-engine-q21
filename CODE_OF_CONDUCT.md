@@ -1,6 +1,6 @@
 # Code of conduct
 
-Local Image Studio contributors are expected to keep project spaces welcoming,
+Diffusers Engine Q21 contributors are expected to keep project spaces welcoming,
 professional, and focused on constructive technical collaboration.
 
 ## Expected behavior

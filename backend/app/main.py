@@ -14,7 +14,7 @@ from .settings import ACCELERATION, CORS_ORIGINS, OUTPUT_DIR
 
 
 app = FastAPI(
-    title="Local Image Studio API",
+    title="Diffusers Engine Q21 API",
     version="1.0.0",
     description="Local Diffusers inference API for Qwen/Qwen-Image-2.1",
 )
@@ -30,7 +30,7 @@ app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
 
 @app.get("/")
 def root() -> dict[str, str]:
-    return {"name": "Local Image Studio API", "docs": "/docs", "health": "/api/health"}
+    return {"name": "Diffusers Engine Q21 API", "docs": "/docs", "health": "/api/health"}
 
 
 @app.get("/api/health")

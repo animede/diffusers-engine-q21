@@ -17,7 +17,7 @@ security advisory feature for this repository and include:
 
 ## Deployment warning
 
-Local Image Studio is a local research tool. The API has no authentication,
+Diffusers Engine Q21 is a local research tool. The API has no authentication,
 authorization, rate limiting, tenant isolation, or content moderation.
 
 - Keep the API and frontend bound to `127.0.0.1` unless an authenticated

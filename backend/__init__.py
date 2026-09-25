@@ -1,1 +1,1 @@
-"""Local Image Studio API package."""
+"""Diffusers Engine Q21 API package."""

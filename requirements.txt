@@ -6,7 +6,7 @@ torchao==0.18.0
 mslk==2026.9.9+cu130
 transformers==5.17.0
 accelerate==1.15.0
-peft==0.21.0
+peft==0.21.1
 huggingface_hub==1.32.0
 safetensors==0.8.0
 pillow==12.3.0

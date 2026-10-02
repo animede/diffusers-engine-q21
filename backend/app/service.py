@@ -18,6 +18,7 @@ from PIL import Image
 
 from .settings import (
     ACCELERATION,
+    COMPILE_BLOCKS,
     CPU_OFFLOAD,
     CUDA_DEVICE,
     MODEL_DIR,
@@ -26,6 +27,9 @@ from .settings import (
     QUANTIZATION,
     REFERENCE_MODE,
     START_PROFILE,
+    TE_DIET,
+    TE_STREAM,
+    TE_STREAM_WINDOW,
     TRIM_CUDA_CACHE,
     VAE_TILING,
     VIGGLE_LORA_DIR,
@@ -268,6 +272,78 @@ class GenerationService:
                         VIGGLE_LORA_DIR,
                         subfolder="scheduler",
                         local_files_only=True,
+                    )
+                if TE_DIET or TE_STREAM:
+                    # tediet: TEのembed/lm_headをCPUへ、層をpinnedホストから
+                    # ストリーミング。出力はビット一致(te-diet README参照)。
+                    from tediet import apply_diet, apply_stream
+
+                    if TE_DIET:
+                        freed = apply_diet(
+                            pipe.text_encoder,
+                            embed_path="model.language_model.embed_tokens",
+                        )
+                        print(f"[q21] tediet: diet freed {freed:.2f} GiB", flush=True)
+                    if TE_STREAM:
+                        pinned = apply_stream(
+                            pipe.text_encoder,
+                            "model.language_model.layers",
+                            device=CUDA_DEVICE,
+                            window=TE_STREAM_WINDOW,
+                        )
+                        print(
+                            f"[q21] tediet: streaming {pinned:.2f} GiB from pinned host "
+                            f"(window={TE_STREAM_WINDOW})",
+                            flush=True,
+                        )
+                    gc.collect()
+                    torch.cuda.empty_cache()
+                if COMPILE_BLOCKS:
+                    # dynamic=False の静的カーネルが最速(実測3.9秒/1024²)だが、
+                    # プロンプト長が変わるたびに約7秒の再コンパイルが走る。dynamic
+                    # カーネルは eager より遅い(実測8.5秒)ため使わない。代わりに
+                    # プロンプト埋め込みを64トークン単位へパディングしてシェイプを
+                    # バケット化し、再コンパイルを「バケットごとに1回」に抑える。
+                    # パディング位置は prompt_embeds_mask が attention から除外する
+                    # (バッチ生成時に diffusers 自身が行うパディングと同じ経路)。
+                    torch._dynamo.config.cache_size_limit = 256
+                    pipe.transformer.compile_repeated_blocks(mode="default", dynamic=False)
+
+                    bucket = 64
+                    original_encode_for_pad = pipe.encode_prompt
+
+                    @wraps(original_encode_for_pad)
+                    def encode_prompt_padded(*args: Any, **kwargs: Any):
+                        prompt_embeds, prompt_embeds_mask, image_pad_mask = (
+                            original_encode_for_pad(*args, **kwargs)
+                        )
+                        seq_len = prompt_embeds.shape[1]
+                        padded = ((seq_len + bucket - 1) // bucket) * bucket
+                        if padded != seq_len:
+                            pad = padded - seq_len
+                            prompt_embeds = torch.nn.functional.pad(
+                                prompt_embeds, (0, 0, 0, pad)
+                            )
+                            if prompt_embeds_mask is None:
+                                prompt_embeds_mask = prompt_embeds.new_ones(
+                                    prompt_embeds.shape[:2], dtype=torch.bool
+                                )
+                                prompt_embeds_mask[:, seq_len:] = False
+                            else:
+                                prompt_embeds_mask = torch.nn.functional.pad(
+                                    prompt_embeds_mask, (0, pad)
+                                )
+                            image_pad_mask = torch.nn.functional.pad(
+                                image_pad_mask, (0, pad)
+                            )
+                        return prompt_embeds, prompt_embeds_mask, image_pad_mask
+
+                    pipe.encode_prompt = encode_prompt_padded
+                    print(
+                        "[q21] regional compile enabled "
+                        f"(static kernels; prompts padded to {bucket}-token buckets, "
+                        "first job per bucket pays the compile)",
+                        flush=True,
                     )
                 if VAE_TILING and hasattr(pipe.vae, "enable_tiling"):
                     pipe.vae.enable_tiling()

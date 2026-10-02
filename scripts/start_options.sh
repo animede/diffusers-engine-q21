@@ -22,7 +22,7 @@ Usage: ./start.sh [options]
        ./start_backend.sh [options]
 
 Options:
-  -p, --profile NAME          turbo|fast|compatible|quality|minimum-vram
+  -p, --profile NAME          turbo|turbo-compile|fast|compatible|quality|minimum-vram
                               turbo-fp8|turbo-bf16|turbo-minimum-vram
   -d, --device DEVICE         CUDA device, for example cuda:0
       --quantization MODE     nvfp4|fp8|bf16 (advanced override)
@@ -34,6 +34,9 @@ Options:
       --no-vae-tiling         Disable tiled VAE decoding
       --trim-cache            Release temporary CUDA cache between stages
       --no-trim-cache         Keep the CUDA allocator cache
+      --te-diet               Move text-encoder embeddings/LM head to CPU (tediet)
+      --te-stream             Stream text-encoder layers from pinned host (tediet)
+      --compile-blocks        Regional-compile the DiT blocks (first job compiles)
       --non-interactive       Do not show the startup menu
       --list-profiles         Show profiles and exit
   -h, --help                  Show this help
@@ -53,6 +56,17 @@ qwen_apply_profile() {
       QWEN_VAE_TILING="1"
       QWEN_TRIM_CUDA_CACHE="1"
       QWEN_ACCELERATION="none"
+      ;;
+    turbo-compile)
+      QWEN_START_PROFILE="turbo-compile"
+      QWEN_QUANTIZATION="nvfp4"
+      QWEN_CPU_OFFLOAD="0"
+      QWEN_REFERENCE_MODE="adaptive"
+      QWEN_VAE_TILING="1"
+      QWEN_TRIM_CUDA_CACHE="1"
+      QWEN_ACCELERATION="viggle-r128"
+      QWEN_TE_DIET="1"
+      QWEN_COMPILE_BLOCKS="1"
       ;;
     turbo|viggle)
       QWEN_START_PROFILE="turbo"
@@ -191,6 +205,9 @@ qwen_configure_startup() {
       --no-vae-tiling) vae_tiling_override="0"; shift ;;
       --trim-cache) trim_cache_override="1"; shift ;;
       --no-trim-cache) trim_cache_override="0"; shift ;;
+      --te-diet) QWEN_TE_DIET="1"; shift ;;
+      --te-stream) QWEN_TE_STREAM="1"; shift ;;
+      --compile-blocks) QWEN_COMPILE_BLOCKS="1"; shift ;;
       --acceleration)
         [[ $# -ge 2 ]] || { echo "$1 requires a value" >&2; return 2; }
         acceleration_override="$2"; shift 2 ;;
@@ -240,9 +257,12 @@ qwen_configure_startup() {
     return 2
   fi
 
+  QWEN_TE_DIET="${QWEN_TE_DIET:-0}"
+  QWEN_TE_STREAM="${QWEN_TE_STREAM:-0}"
+  QWEN_COMPILE_BLOCKS="${QWEN_COMPILE_BLOCKS:-0}"
   export QWEN_START_PROFILE QWEN_DEVICE QWEN_QUANTIZATION QWEN_CPU_OFFLOAD
   export QWEN_REFERENCE_MODE QWEN_VAE_TILING QWEN_TRIM_CUDA_CACHE
-  export QWEN_ACCELERATION
+  export QWEN_ACCELERATION QWEN_TE_DIET QWEN_TE_STREAM QWEN_COMPILE_BLOCKS
   export QWEN_OPTIONS_CONFIGURED=1
 
   echo "Startup: profile=$QWEN_START_PROFILE device=$QWEN_DEVICE quantization=$QWEN_QUANTIZATION acceleration=$QWEN_ACCELERATION cpu_offload=$QWEN_CPU_OFFLOAD reference_mode=$QWEN_REFERENCE_MODE vae_tiling=$QWEN_VAE_TILING trim_cache=$QWEN_TRIM_CUDA_CACHE"

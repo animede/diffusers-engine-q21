@@ -44,6 +44,16 @@ if REFERENCE_MODE not in {"adaptive", "full"}:
     raise ValueError("QWEN_REFERENCE_MODE は adaptive または full を指定してください。")
 VAE_TILING = env_flag("QWEN_VAE_TILING", True)
 TRIM_CUDA_CACHE = env_flag("QWEN_TRIM_CUDA_CACHE", True)
+# tediet (https://github.com/animede/te-diet): テキストエンコーダの低VRAM化。
+# どちらも全常駐構成専用で、QWEN_CPU_OFFLOAD=1 とは併用できない。
+TE_DIET = env_flag("QWEN_TE_DIET", False)
+TE_STREAM = env_flag("QWEN_TE_STREAM", False)
+TE_STREAM_WINDOW = int(os.getenv("QWEN_TE_STREAM_WINDOW", "2"))
+# DiTブロックの regional compile (compile_repeated_blocks)。初回に数秒〜十数秒の
+# コンパイルが走る代わりに生成が約3割速くなる(Blackwell実測 5.70s→3.89s)。
+COMPILE_BLOCKS = env_flag("QWEN_COMPILE_BLOCKS", False)
+if CPU_OFFLOAD and (TE_DIET or TE_STREAM):
+    raise ValueError("QWEN_TE_DIET / QWEN_TE_STREAM はCPUオフロードと併用できません。")
 
 _default_origins = "http://127.0.0.1:5173,http://localhost:5173"
 CORS_ORIGINS = [origin.strip() for origin in os.getenv("QWEN_CORS_ORIGINS", _default_origins).split(",") if origin.strip()]

@@ -1,0 +1,23 @@
+{
+  "checkpoint": "svdq-fp4_r32-qwen-image-2.1.safetensors",
+  "device": "cuda:1",
+  "steps": 6,
+  "size": 512,
+  "avg_time_s": 1.85,
+  "peak_gib": 8.06,
+  "load_s": 14.6,
+  "runs": [
+    {
+      "time_s": 1.8530439453125,
+      "peak_gib": 8.064513206481934
+    },
+    {
+      "time_s": 1.8357333984375,
+      "peak_gib": 8.064513206481934
+    },
+    {
+      "time_s": 1.85116552734375,
+      "peak_gib": 8.064513206481934
+    }
+  ]
+}

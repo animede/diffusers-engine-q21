@@ -1,0 +1,19 @@
+{
+  "path": "torchao-nvfp4-cache",
+  "device": "cuda:1",
+  "steps": 6,
+  "size": 1328,
+  "avg_time_s": 6.97,
+  "peak_gib": 13.82,
+  "load_s": 11.0,
+  "runs": [
+    {
+      "time_s": 6.9688994140625,
+      "peak_gib": 13.817831993103027
+    },
+    {
+      "time_s": 6.96944873046875,
+      "peak_gib": 13.817831993103027
+    }
+  ]
+}

@@ -46,7 +46,8 @@ APIはモデルをGPUに常駐させ、生成ジョブを1件ずつ処理しま�
 
 | プロファイル | 構成 | 用途 |
 |---|---|---|
-| `turbo` | Viggle r128 6-step LoRA + NVFP4、GPU常駐 | 最速。T2Iと参照1〜3枚のedit向け |
+| `turbo` | Viggle r128 6-step LoRA + NVFP4、GPU常駐 | T2Iと参照1〜3枚のedit向け |
+| `turbo-compile` | `turbo` + DiTブロックのregional compile + [tediet](https://github.com/animede/te-diet)のTEダイエット | 最速。初回ジョブ(と新しいプロンプト長バケット)でコンパイルが走る。実測: 多様なプロンプトで約5.3秒/1024²、TE diet で常駐-2.3GiB |
 | `turbo-fp8` | Viggle r128 6-step + FP8、GPU常駐 | 非Blackwell向けTurbo候補 |
 | `turbo-bf16` | Viggle r128 6-step + BF16、GPU常駐 | 非量子化重み＋Turboの比較用 |
 | `turbo-minimum-vram` | Viggle r128 6-step + FP8、CPUオフロード | Turboを最小VRAMで実行 |

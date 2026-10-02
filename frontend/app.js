@@ -10,6 +10,7 @@ const dropzone = $("dropzone");
 let selectedFiles = [];
 let activeJob = null;
 let turboMode = false;
+let lastJob = null; // 言語切替時に完了/エラー表示を再描画するために保持
 
 function toast(message) {
   const element = $("toast");
@@ -36,16 +37,21 @@ async function refreshHealth() {
     turboMode = model.acceleration === "viggle-r128";
     $("steps").value = turboMode ? "6" : $("steps").value;
     $("steps").disabled = turboMode;
-    $("steps").title = turboMode ? "Viggle Turboでは6ステップ固定です" : "";
+    $("steps").title = turboMode ? t("steps.turboFixed") : "";
     $("guidance").value = turboMode ? "1" : $("guidance").value;
     $("guidance").disabled = turboMode;
-    $("referenceHelp").textContent = turboMode ? "任意・Turboでは最大3枚" : "任意・最大10枚";
+    $("referenceHelp").textContent = t(turboMode ? "reference.help.turbo" : "reference.help");
     $("serverStatus").className = "server-status online";
-    const labels = { ready: "モデル準備完了", loading: "モデル読込中", error: "モデルエラー", not_loaded: model.downloaded ? "API接続済み" : "モデル未配置" };
-    $("statusLabel").textContent = labels[model.status] || "API接続済み";
+    const labels = {
+      ready: t("status.model.ready"),
+      loading: t("status.model.loading"),
+      error: t("status.model.error"),
+      not_loaded: model.downloaded ? t("status.connected") : t("status.model.missing"),
+    };
+    $("statusLabel").textContent = labels[model.status] || t("status.connected");
     $("loadModelButton").classList.toggle("hidden", !model.downloaded || model.status === "ready" || model.status === "loading");
-    if (!activeJob) {
-      if (!model.downloaded) $("jobInfo").textContent = "モデルのダウンロードが必要です。";
+    if (!activeJob && !lastJob) {
+      if (!model.downloaded) $("jobInfo").textContent = t("job.needDownload");
       else if (model.status === "ready") {
         const precision = {
           nvfp4: "NVFP4 W4A4",
@@ -53,15 +59,15 @@ async function refreshHealth() {
           bf16: "BF16",
         }[model.quantization] || model.quantization.toUpperCase();
         const acceleration = turboMode ? " · Viggle r128 / 6-step" : "";
-        $("jobInfo").textContent = `${model.device} · ${precision}${acceleration} · ${model.start_profile} · モデル常駐中`;
+        $("jobInfo").textContent = `${model.device} · ${precision}${acceleration} · ${model.start_profile} · ${t("job.resident")}`;
       }
-      else if (model.status === "loading") $("jobInfo").textContent = "モデルをGPUへ読み込んでいます。";
-      else $("jobInfo").textContent = "初回生成時にモデルをGPUへ読み込みます。";
+      else if (model.status === "loading") $("jobInfo").textContent = t("job.loading");
+      else $("jobInfo").textContent = t("job.lazy");
     }
   } catch (error) {
     $("serverStatus").className = "server-status error";
-    $("statusLabel").textContent = "API未接続";
-    if (!activeJob) $("jobInfo").textContent = `APIを起動してください: ${API_BASE}`;
+    $("statusLabel").textContent = t("status.disconnected");
+    if (!activeJob && !lastJob) $("jobInfo").textContent = t("job.startApi", { api: API_BASE });
   }
 }
 
@@ -88,8 +94,8 @@ function addFiles(files) {
   const limit = turboMode ? 3 : 10;
   const exceedsLimit = selectedFiles.length + images.length > limit;
   selectedFiles = [...selectedFiles, ...images].slice(0, limit);
-  if (images.length !== files.length) toast("画像以外のファイルは除外しました。");
-  if (exceedsLimit) toast(`参照画像は最大${limit}枚です。`);
+  if (images.length !== files.length) toast(t("toast.nonImage"));
+  if (exceedsLimit) toast(t("toast.maxImages", { limit }));
   renderPreviews();
 }
 
@@ -113,10 +119,20 @@ function setGenerating(active) {
 
 function updateProgress(job) {
   const percent = Math.round((job.progress || 0) * 100);
-  $("progressMessage").textContent = job.message;
+  const message = translateServerMessage(job.message);
+  $("progressMessage").textContent = message;
   $("progressBar").style.width = `${percent}%`;
   $("progressPercent").textContent = `${percent}%`;
-  $("jobInfo").textContent = `ジョブ ${job.id.slice(0, 8)} · ${job.message}`;
+  $("jobInfo").textContent = t("job.label", { id: job.id.slice(0, 8), message });
+}
+
+function renderFinishedJob() {
+  if (!lastJob) return;
+  if (lastJob.status === "completed") {
+    $("jobInfo").textContent = t("job.done", { id: lastJob.id.slice(0, 8) });
+  } else if (lastJob.status === "failed") {
+    $("jobInfo").textContent = t("job.error", { message: lastJob.error || t("error.generationFailed") });
+  }
 }
 
 async function pollJob(jobId) {
@@ -124,16 +140,20 @@ async function pollJob(jobId) {
     const job = await api(`/jobs/${jobId}`);
     updateProgress(job);
     if (job.status === "completed") {
+      lastJob = job;
       const url = `${API_ORIGIN}${job.output_url}`;
       $("resultImage").src = `${url}?t=${Date.now()}`;
       $("resultImage").classList.remove("hidden");
       $("emptyState").classList.add("hidden");
       $("downloadButton").href = url;
       $("downloadButton").classList.remove("hidden");
-      $("jobInfo").textContent = `完了 · ジョブ ${job.id.slice(0, 8)}`;
+      renderFinishedJob();
       return;
     }
-    if (job.status === "failed") throw new Error(job.error || "生成に失敗しました。");
+    if (job.status === "failed") {
+      lastJob = job;
+      throw new Error(job.error || t("error.generationFailed"));
+    }
     await new Promise((resolve) => setTimeout(resolve, 900));
   }
 }
@@ -143,7 +163,7 @@ form.addEventListener("submit", async (event) => {
   if (activeJob) return;
   const width = Number($("width").value);
   const height = Number($("height").value);
-  if (width % 16 || height % 16) return toast("幅と高さは16の倍数にしてください。");
+  if (width % 16 || height % 16) return toast(t("toast.multiple16"));
   $("canvas").style.aspectRatio = `${width} / ${height}`;
 
   const body = new FormData();
@@ -157,15 +177,16 @@ form.addEventListener("submit", async (event) => {
   selectedFiles.forEach((file) => body.append("images", file, file.name));
 
   setGenerating(true);
+  lastJob = null;
   $("progressBar").style.width = "0%";
-  $("progressMessage").textContent = "ジョブを登録しています";
+  $("progressMessage").textContent = t("progress.submitting");
   try {
     const job = await api("/jobs", { method: "POST", body });
     activeJob = job.id;
     await pollJob(job.id);
   } catch (error) {
     toast(error.message);
-    $("jobInfo").textContent = `エラー: ${error.message}`;
+    $("jobInfo").textContent = t("job.error", { message: error.message });
   } finally {
     activeJob = null;
     setGenerating(false);
@@ -177,8 +198,13 @@ $("loadModelButton").addEventListener("click", async () => {
   try {
     await api("/model/load", { method: "POST" });
     $("loadModelButton").classList.add("hidden");
-    $("jobInfo").textContent = "モデルをGPUへ読み込んでいます。";
+    $("jobInfo").textContent = t("job.loading");
   } catch (error) { toast(error.message); }
+});
+
+document.addEventListener("langchange", () => {
+  renderFinishedJob();
+  refreshHealth();
 });
 
 refreshHealth();

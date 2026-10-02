@@ -5,53 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark" />
     <title>Diffusers Engine Q21</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=2" />
   </head>
   <body>
     <div class="ambient ambient-one"></div>
     <div class="ambient ambient-two"></div>
     <header class="topbar">
       <a class="brand" href="#">LOCAL <span>IMAGE STUDIO</span></a>
-      <div class="server-status" id="serverStatus">
-        <span class="status-dot"></span><span id="statusLabel">APIを確認中</span>
+      <div class="topbar-right">
+        <button id="langToggle" class="lang-toggle" type="button" aria-label="Switch language">EN</button>
+        <div class="server-status" id="serverStatus">
+          <span class="status-dot"></span><span id="statusLabel" data-i18n="status.checking">APIを確認中</span>
+        </div>
       </div>
     </header>
 
     <main class="shell">
       <section class="intro">
         <p class="eyebrow">LOCAL DIFFUSERS STUDIO</p>
-        <h1>言葉とイメージから、<br /><em>次の一枚</em>をつくる。</h1>
-        <p class="lede">Qwen-Image-2.1をローカルGPUで実行。参照画像を追加すると、そのまま編集モードになります。</p>
+        <h1 id="heroTitle" data-i18n-html="hero.title">言葉とイメージから、<br /><em>次の一枚</em>をつくる。</h1>
+        <p class="lede" data-i18n="hero.lede">Qwen-Image-2.1をローカルGPUで実行。参照画像を追加すると、そのまま編集モードになります。</p>
       </section>
 
       <section class="workspace">
         <form id="generateForm" class="control-panel">
           <div class="section-heading">
             <span>01</span>
-            <div><h2>プロンプト</h2><p>作りたい画像、または編集内容を入力</p></div>
+            <div><h2 data-i18n="sec.prompt">プロンプト</h2><p data-i18n="sec.prompt.sub">作りたい画像、または編集内容を入力</p></div>
           </div>
-          <textarea id="prompt" required maxlength="4000" placeholder="例：雨の東京、ネオンの反射、映画的な構図。看板には『QWEN IMAGE』と書かれている。"></textarea>
+          <textarea id="prompt" required maxlength="4000" data-i18n-placeholder="prompt.placeholder" placeholder="例：雨の東京、ネオンの反射、映画的な構図。看板には『QWEN IMAGE』と書かれている。"></textarea>
 
           <details>
-            <summary>ネガティブプロンプト <small>CFG使用時のみ</small></summary>
+            <summary><span data-i18n="negative.label">ネガティブプロンプト</span> <small data-i18n="negative.note">CFG使用時のみ</small></summary>
             <textarea id="negativePrompt" maxlength="4000" placeholder="blurry, low quality"></textarea>
           </details>
 
           <div class="section-heading compact">
             <span>02</span>
-            <div><h2>参照画像</h2><p id="referenceHelp">任意・最大10枚</p></div>
+            <div><h2 data-i18n="sec.reference">参照画像</h2><p id="referenceHelp" data-i18n="reference.help">任意・最大10枚</p></div>
           </div>
           <label class="dropzone" id="dropzone">
             <input id="imageInput" type="file" accept="image/*" multiple />
             <span class="drop-icon">＋</span>
-            <strong>画像をドロップ</strong>
-            <small>またはクリックして選択</small>
+            <strong data-i18n="drop.title">画像をドロップ</strong>
+            <small data-i18n="drop.sub">またはクリックして選択</small>
           </label>
           <div id="previews" class="previews"></div>
 
           <div class="section-heading compact">
             <span>03</span>
-            <div><h2>生成設定</h2><p>サイズとサンプリング</p></div>
+            <div><h2 data-i18n="sec.settings">生成設定</h2><p data-i18n="sec.settings.sub">サイズとサンプリング</p></div>
           </div>
           <div class="preset-row" id="presets">
             <button type="button" data-w="1024" data-h="1024" class="active">1:1</button>
@@ -62,45 +65,46 @@
             <button type="button" data-w="2048" data-h="2048">2K</button>
           </div>
           <div class="settings-grid">
-            <label>幅<input id="width" type="number" value="1024" min="256" max="2752" step="16" /></label>
-            <label>高さ<input id="height" type="number" value="1024" min="256" max="2752" step="16" /></label>
-            <label>ステップ<input id="steps" type="number" value="40" min="2" max="100" /></label>
-            <label>CFG<input id="guidance" type="number" value="1" min="1" max="10" step="0.1" /></label>
-            <label class="wide">シード <small>−1でランダム</small><input id="seed" type="number" value="-1" min="-1" /></label>
+            <label><span data-i18n="field.width">幅</span><input id="width" type="number" value="1024" min="256" max="2752" step="16" /></label>
+            <label><span data-i18n="field.height">高さ</span><input id="height" type="number" value="1024" min="256" max="2752" step="16" /></label>
+            <label><span data-i18n="field.steps">ステップ</span><input id="steps" type="number" value="40" min="2" max="100" /></label>
+            <label><span data-i18n="field.cfg">CFG</span><input id="guidance" type="number" value="1" min="1" max="10" step="0.1" /></label>
+            <label class="wide"><span data-i18n="field.seed">シード</span> <small data-i18n="field.seed.note">−1でランダム</small><input id="seed" type="number" value="-1" min="-1" /></label>
           </div>
 
           <button class="generate-button" id="generateButton" type="submit">
-            <span>生成する</span><i>→</i>
+            <span data-i18n="generate">生成する</span><i>→</i>
           </button>
         </form>
 
         <section class="result-panel">
           <div class="result-toolbar">
-            <div><span class="mode-pill" id="modePill">TEXT TO IMAGE</span><h2>プレビュー</h2></div>
+            <div><span class="mode-pill" id="modePill">TEXT TO IMAGE</span><h2 data-i18n="preview">プレビュー</h2></div>
             <a id="downloadButton" class="download hidden" download>PNG ↓</a>
           </div>
           <div class="canvas" id="canvas">
             <div class="empty-state" id="emptyState">
               <div class="frame-mark">Q</div>
-              <p>生成した画像がここに表示されます</p>
+              <p data-i18n="empty">生成した画像がここに表示されます</p>
             </div>
-            <img id="resultImage" class="hidden" alt="生成結果" />
+            <img id="resultImage" class="hidden" alt="result" />
             <div id="progressOverlay" class="progress-overlay hidden">
               <div class="spinner"></div>
-              <strong id="progressMessage">準備中</strong>
+              <strong id="progressMessage" data-i18n="progress.preparing">準備中</strong>
               <div class="progress-track"><div id="progressBar"></div></div>
               <small id="progressPercent">0%</small>
             </div>
           </div>
           <div class="result-meta">
-            <p id="jobInfo">APIサーバーへの接続を確認しています。</p>
-            <button id="loadModelButton" type="button" class="text-button hidden">モデルをGPUへ読み込む</button>
+            <p id="jobInfo" data-i18n="job.connecting">APIサーバーへの接続を確認しています。</p>
+            <button id="loadModelButton" type="button" class="text-button hidden" data-i18n="model.load">モデルをGPUへ読み込む</button>
           </div>
         </section>
       </section>
     </main>
 
     <div id="toast" class="toast hidden"></div>
-    <script src="app.js"></script>
+    <script src="i18n.js?v=2"></script>
+    <script src="app.js?v=2"></script>
   </body>
 </html>

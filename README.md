@@ -278,6 +278,8 @@ NVFP4キャッシュがある場合は起動時の量子化変換をスキップ
 
 ## ライセンスと帰属
 
+本リポジトリのソースコードの著作権者: © 2026 YUZUKI (animede)。著作権表示と [NOTICE](NOTICE) の内容は、Apache-2.0 第4条に基づき再配布時も保持してください。
+
 本リポジトリで独自に作成したソースコードとドキュメントは[Apache License 2.0](LICENSE)で公開します。主な独自実装は、選択的NVFP4量子化、再利用可能な量子化キャッシュ、参照枚数に応じたVision入力制御、量子化・Viggle・CPU offloadを組み合わせる起動プロファイル、および速度・VRAMベンチマーク基盤です。これは学術的新規性や特許性を主張するものではありません。
 
 Qwen Image 2.1、Viggle Turbo、Orbit LoRA、Diffusers、PyTorch、TorchAOなどの第三者素材・ソフトウェアは、それぞれのライセンスに従います。特にQwen、Viggle、Orbitのモデル重みはApache-2.0の対象外で、Qwen Research License上、研究・評価目的の非商用利用に限定されます。詳細は[NOTICE](NOTICE)、[Third-party notices](THIRD_PARTY_NOTICES.md)、[Security policy](SECURITY.md)を確認してください。

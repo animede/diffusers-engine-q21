@@ -1,5 +1,5 @@
 Diffusers Engine Q21
-Copyright 2026 Diffusers Engine Q21 contributors
+Copyright 2026 YUZUKI (animede)
 
 This product includes original integration code for local inference,
 quantization, low-VRAM execution, acceleration profiles, and benchmarking.
